@@ -1,24 +1,19 @@
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  const path = url.pathname;
 
-  // Allow public website pages.
-  if (!path.startsWith("/api/")) {
+  if (!url.pathname.startsWith("/api/")) {
     return context.next();
   }
 
-  // Allow the initial owner setup endpoint.
-  // The endpoint checks the secret and existing owner.
+  // Allow initial owner setup only via POST.
   if (
-    path === "/api/setup-owner" &&
+    url.pathname === "/api/setup-owner" &&
     context.request.method === "POST"
   ) {
     return context.next();
   }
 
-  // Block all other API requests until
-  // authentication is implemented.
   return Response.json(
     { error: "Authentication required" },
     {
