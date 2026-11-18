@@ -1,5 +1,5 @@
 import {json,sameOrigin} from "../_auth.js";
-import {sha256,pinHash} from "../_delivery.js";
+import {sha256,pinHash,accessTicket} from "../_delivery.js";
 const fail={error:"الرابط أو الرمز غير صحيح"};
 export async function onRequestPost({request,env}){
  if(!sameOrigin(request))return json({error:"طلب غير مسموح"},403);
@@ -14,9 +14,10 @@ export async function onRequestPost({request,env}){
   if(row.locked_until&&row.locked_until>now)return json({error:"الحساب مقفل مؤقتاً",retry_after_seconds:row.locked_until-now},423);
   const match=(await pinHash(b.pin,env))===row.pin_hash;
   if(match){
-   await env.DB.prepare("UPDATE account_deliveries SET failed_attempts=0,lock_level=0,locked_until=NULL,updated_at=CURRENT_TIMESTAMP WHERE account_id=? AND permanently_locked=0").bind(row.account_id).run();
+   const updated=await env.DB.prepare("UPDATE account_deliveries SET failed_attempts=0,lock_level=0,locked_until=NULL,updated_at=CURRENT_TIMESTAMP WHERE account_id=? AND failed_attempts=? AND lock_level=? AND permanently_locked=0 AND (locked_until IS NULL OR locked_until<=?)").bind(row.account_id,row.failed_attempts,row.lock_level,now).run();
+   if(!updated.meta.changes)return json({error:"أعد المحاولة لاحقاً"},429);
    // Only non-secret customer data until encrypted credential delivery is implemented.
-   return json({success:true,customer_name:row.customer_name,account_email:row.account_email,credentials_available:false});
+   return json({success:true,customer_name:row.customer_name,account_email:row.account_email,credentials_available:true,ticket:await accessTicket(row.account_id,env)});
   }
   // Atomic compare-and-swap protects against simultaneous incorrect requests.
   const nextAttempts=row.failed_attempts+1;
