@@ -4,6 +4,7 @@ on:
     paths:
       - "functions/**"
       - "tests/**"
+      - "migrations/**"
       - ".github/workflows/secure-delivery.yml"
   push:
     branches: [main]
@@ -16,3 +17,4 @@ jobs:
         with:
           node-version: "22"
       - run: node --test tests/*.test.mjs
+      - run: python3 -m unittest discover -s tests -p "test_migrations.py"
