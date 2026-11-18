@@ -118,7 +118,18 @@
           body: JSON.stringify({ password })
         });
 
-        const data = await response.json();
+        const raw = await response.text();
+
+let data;
+
+try {
+  data = JSON.parse(raw);
+} catch {
+  throw new Error(
+    "الخادم أعاد استجابة غير متوقعة. HTTP " +
+    response.status
+  );
+}
 
         if (response.status === 201 && data.success) {
           message.textContent = "تم إنشاء حساب المدير بنجاح";
@@ -127,9 +138,10 @@
           message.textContent =
             data.error || "تعذر إنشاء الحساب";
         }
-      } catch {
-        message.textContent = "حدث خطأ في الاتصال بالخادم";
-      } finally {
+} catch (error) {
+  message.textContent =
+    "تعذر إكمال الطلب: " + error.message;
+} finally {
         button.disabled = false;
       }
     });
