@@ -52,7 +52,7 @@ export async function onRequestPost({ request, env }) {
     ["deriveBits"]
   );
 
-  const iterations = 600000;
+  const iterations = 100000;
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
