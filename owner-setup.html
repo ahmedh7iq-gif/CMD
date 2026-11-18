@@ -136,7 +136,7 @@ try {
           form.reset();
         } else {
           message.textContent =
-            data.error || "تعذر إنشاء الحساب";
+            (data.error || "تعذر إنشاء الحساب") + (data.stage ? " — المرحلة: " + data.stage : "") + " (HTTP " + response.status + ")";
         }
 } catch (error) {
   message.textContent =
