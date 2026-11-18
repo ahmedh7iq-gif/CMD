@@ -1,3 +1,4 @@
+import {randomHex,newPin,sha256,pinHash,encryptSecret} from "../_delivery.js";
 import {getSession,json,sameOrigin} from "../_auth.js";
 async function owner(request,env){const user=await getSession(request,env);return user?.role==="owner"?user:null}
 export async function onRequestGet({request,env}){
@@ -14,6 +15,23 @@ export async function onRequestPost({request,env}){
  const type=b?.account_type,name=b?.customer_name,email=b?.account_email,notes=b?.notes??"",price=b?.sale_price_iqd,cost=b?.cost_iqd;
  if(!["apple","google"].includes(type)||typeof name!=="string"||!name.trim()||name.length>120||typeof email!=="string"||email.length>254||!/^\S+@\S+\.\S+$/.test(email)||typeof notes!=="string"||notes.length>1000||![price,cost].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=1000000000))return json({error:"تحقق من البيانات والأسعار"},400);
  try{
+ if(b.delivery){
+   const {account_full_name="",phone="",birth_date="",address="",initial_password=""}=b.delivery;
+   if([[account_full_name,150],[phone,40],[address,500],[initial_password,256]].some(([v,n])=>typeof v!=="string"||v.length>n) || typeof birth_date!=="string" || (birth_date&&!/^\d{4}-\d{2}-\d{2}$/.test(birth_date)))return json({error:"تحقق من بيانات التسليم"},400);
+   const token=randomHex(),pin=newPin(),tokenDigest=await sha256(token),pinDigest=await pinHash(pin,env);
+   for(let attempt=0;attempt<3;attempt++){
+     const {id}=await env.DB.prepare("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='sold_accounts'),0)+1 AS id").first();
+     const profile=JSON.stringify({account_full_name,phone,birth_date,address});
+     const [link,details,password]=await Promise.all([encryptSecret(token,env,id),encryptSecret(profile,env,id),initial_password?encryptSecret(initial_password,env,id):null]);
+     try{
+       await env.DB.batch([
+         env.DB.prepare("INSERT INTO sold_accounts(id,account_type,customer_name,account_email,notes,sale_price_iqd,cost_iqd,created_by) VALUES(?,?,?,?,?,?,?,?)").bind(id,type,name.trim(),email.trim(),notes.trim(),price,cost,user.id),
+         env.DB.prepare("INSERT INTO account_deliveries(account_id,token_hash,pin_hash,encrypted_token,encrypted_profile,encrypted_password) VALUES(?,?,?,?,?,?)").bind(id,tokenDigest,pinDigest,link,details,password)
+       ]);
+       return json({success:true,id,pin,delivery_path:"/delivery.html?t="+token},201);
+     }catch(error){if(!String(error).includes("UNIQUE constraint failed: sold_accounts.id")||attempt===2)throw error}
+   }
+ }
  const r=await env.DB.prepare("INSERT INTO sold_accounts (account_type,customer_name,account_email,notes,sale_price_iqd,cost_iqd,created_by) VALUES (?,?,?,?,?,?,?)").bind(type,name.trim(),email.trim(),notes.trim(),price,cost,user.id).run();
  return json({success:true,id:r.meta.last_row_id},201);
  }catch(e){console.error("Account insert failed",e);return json({error:"تعذر الحفظ. تأكد من إنشاء جدول الحسابات."},503)}

@@ -1,5 +1,5 @@
 import {getSession,verifyPassword,json,sameOrigin} from "../_auth.js";
-import {validateTicket,encryptSecret,decryptSecret} from "../_delivery.js";
+import {pinHash,validateTicket,encryptSecret,decryptSecret} from "../_delivery.js";
 export async function onRequestPost({request,env}){
  if(!sameOrigin(request))return json({error:"طلب غير مسموح"},403);
  let b;try{b=await request.json()}catch{return json({error:"بيانات غير صحيحة"},400)}
@@ -10,14 +10,15 @@ export async function onRequestPost({request,env}){
   const row=await env.DB.prepare("SELECT password_hash FROM users WHERE id=?").bind(u.id).first();
   if(!row||!await verifyPassword(b.owner_password,row.password_hash))return json({error:"فشل التحقق من المالك"},403);
   id=b.account_id;actor="owner";
- }else id=await validateTicket(b.ticket,env);
+ }else id=await validateTicket(b.ticket,env,b.mode==="update"?"update":"read");
  if(!Number.isSafeInteger(id)||id<1)return json({error:"انتهت صلاحية التحقق"},403);
  try{
   const row=await env.DB.prepare("SELECT encrypted_profile,permanently_locked,locked_until FROM account_deliveries WHERE account_id=?").bind(id).first();
   if(!row)return json({error:"الحساب غير موجود"},404);
   if(actor==="customer"&&(row.permanently_locked||(row.locked_until&&row.locked_until>Date.now()/1000)))return json({error:"الحساب مقفل"},423);
-  if(b.mode==="read"){const profile=row.encrypted_profile?JSON.parse(await decryptSecret(row.encrypted_profile,env,id)):{};return json({account_full_name:profile.account_full_name||"",birth_date:profile.birth_date||"",address:profile.address||""});}
-  if(actor!=="owner")return json({error:"التعديل متاح للمالك فقط"},403);
+  const profile=row.encrypted_profile?JSON.parse(await decryptSecret(row.encrypted_profile,env,id)):{};
+  if(b.mode==="read"){return json({account_full_name:profile.account_full_name||"",birth_date:profile.birth_date||"",phone:profile.phone||"",address:profile.address||""});}
+
   const {account_full_name,birth_date,address}=b;
   if(typeof account_full_name!=="string"||account_full_name.length>150||typeof birth_date!=="string"||birth_date.length>20||typeof address!=="string"||address.length>500||birth_date&&!/^\d{4}-\d{2}-\d{2}$/.test(birth_date))return json({error:"تحقق من الحقول"},400);
   const encrypted=await encryptSecret(JSON.stringify({account_full_name:account_full_name.trim(),birth_date,address:address.trim()}),env,id);
