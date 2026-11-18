@@ -1,0 +1,20 @@
+name: Secure delivery tests
+on:
+  pull_request:
+    paths:
+      - "functions/**"
+      - "tests/**"
+      - "migrations/**"
+      - ".github/workflows/secure-delivery.yml"
+  push:
+    branches: [main]
+jobs:
+  lockout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test tests/*.test.mjs
+      - run: python3 -m unittest discover -s tests -p "test_migrations.py"

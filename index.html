@@ -21,27 +21,20 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
 .detail-price small{color:#64748b}.detail-price strong{display:block;font-size:26px;margin-top:5px}
 .detail-actions{display:flex;gap:10px;margin-top:20px}.detail-actions button{margin:0}
 .view-btn{background:#edf3ff;color:#244b96}
-#receipt{display:none}
+#receipt{display:none}\n#receiptDialog{width:min(95vw,590px);max-height:92vh;overflow:auto;padding:22px;border-radius:20px}\n.receipt-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px}\n.receipt-preview-head h2{font-size:21px;margin:0 0 12px}\n.receipt-preview-head button{width:auto;margin:0}\n.receipt-preview-actions{display:flex;gap:10px}.receipt-preview-actions button{margin-top:15px}\n@media(max-width:560px){.receipt-preview-actions{flex-direction:column}}
 @media(max-width:560px){.detail-grid{grid-template-columns:1fr}.detail-body{padding:19px}.detail-actions{flex-direction:column}}
 @media print{
- @page{size:A4;margin:18mm}
- body{background:#fff!important;color:#17243b}
+ @page{size:A4;margin:8mm}
+ body{background:#fff!important}
  body>header,main,dialog{display:none!important}
- #receipt{display:block!important;direction:rtl;font-family:Arial,sans-serif;color:#17243b}
- .receipt-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #17243b;padding-bottom:22px}
- .receipt-logo{font-size:32px;font-weight:900;letter-spacing:3px}
- .receipt-sub{color:#64748b;font-size:12px;margin-top:6px}
- .receipt-title{font-size:25px;margin:35px 0 25px}
- .receipt-row{display:flex;justify-content:space-between;gap:25px;padding:15px 0;border-bottom:1px solid #e2e8f0}
- .receipt-row span{color:#64748b}.receipt-row strong{overflow-wrap:anywhere;text-align:left}
- .receipt-total{background:#f1f5f9;padding:18px;margin-top:25px;display:flex;justify-content:space-between;font-size:22px;font-weight:bold}
- .receipt-foot{margin-top:55px;border-top:1px solid #e2e8f0;padding-top:15px;color:#64748b;font-size:12px}
+ #receipt{display:flex!important;justify-content:center;align-items:flex-start;width:100%;margin:0;padding:0}
+ #receiptPrintImage{display:block;max-width:100%;max-height:280mm;object-fit:contain}
 }
-</style></head><body>
+</style><script src="/vendor/qrcode.min.js"></script><script src="/vendor/cmd-receipt.js"></script></head><body>
 <header><h1>نظام إدارة الحسابات</h1><p>CMD • Apple & Google</p></header><main>
 <section class="card" id="login"><h2>تسجيل الدخول</h2><form id="loginForm"><label>اسم المستخدم</label><input id="username" autocomplete="username" required><label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn">دخول آمن</button></form><p id="message" role="status"></p></section>
 <div id="app"><section class="card"><div class="toolbar"><div><h2>لوحة المدير</h2><p class="muted">مرحباً، <strong id="name"></strong></p></div><button id="logout" class="secondary">خروج</button></div><div class="stats"><div class="stat">الحسابات المسجلة<strong id="count">—</strong></div><div class="stat">إجمالي المبيعات<strong id="sales">—</strong></div><div class="stat">الربح الإجمالي<strong id="profit">—</strong></div></div></section>
-<section class="card"><h2>إضافة عملية بيع حساب</h2><p class="muted">كل حساب يُسجّل كعملية مستقلة. لا تكتب كلمة مرور Apple أو Google هنا.</p><form id="accountForm"><div class="grid"><div><label>نوع الحساب</label><select id="type"><option value="apple">Apple</option><option value="google">Google</option></select></div><div><label>اسم الزبون</label><input id="customer" maxlength="120" required></div><div><label>بريد الحساب</label><input id="email" type="email" maxlength="254" required></div><div><label>سعر البيع (د.ع)</label><input id="price" type="number" min="0" max="1000000000" value="0" required></div><div><label>التكلفة (د.ع) — للمدير فقط</label><input id="cost" type="number" min="0" max="1000000000" value="0" required></div><div><label>ملاحظات غير سرية</label><textarea id="notes" maxlength="1000" rows="2"></textarea></div></div><button id="save">حفظ الحساب</button></form><p id="status" role="status"></p></section>
+<section class="card"><h2>تسليم الحسابات المحمي</h2><p class="muted">إنشاء رابط التسليم، استرجاع PIN، وإدارة كلمات المرور المحفوظة.</p><a href="/delivery-admin.html">فتح إدارة التسليم المحمي</a></section><section class="card"><h2>إضافة عملية بيع حساب</h2><p class="muted">كل حساب يُسجّل كعملية مستقلة. سلّم رمز PIN للزبون بشكل منفصل عن الوصل.</p><form id="accountForm"><div class="grid"><div><label>نوع الحساب</label><select id="type"><option value="apple">Apple</option><option value="google">Google</option></select></div><div><label>اسم الزبون</label><input id="customer" maxlength="120" required></div><div><label>بريد الحساب</label><input id="email" type="email" maxlength="254" required></div><div><label for="accountName">الاسم المرتبط بالحساب</label><input id="accountName" maxlength="150"></div><div><label for="birthday">تاريخ الميلاد</label><input id="birthday" type="date"></div><div><label for="phone">رقم الهاتف</label><input id="phone" type="tel" maxlength="40"></div><div><label for="address">العنوان</label><input id="address" maxlength="500"></div><div><label for="initialPassword">كلمة المرور الأولية للتسليم</label><input id="initialPassword" type="password" maxlength="256" autocomplete="new-password"></div><div><label>سعر البيع (د.ع)</label><input id="price" type="number" min="0" max="1000000000" value="0" required></div><div><label>التكلفة (د.ع) — للمدير فقط</label><input id="cost" type="number" min="0" max="1000000000" value="0" required></div><div><label>ملاحظات غير سرية</label><textarea id="notes" maxlength="1000" rows="2"></textarea></div></div><button id="save">حفظ الحساب</button></form><p id="status" role="status"></p></section>
 <section class="card"><div class="toolbar"><h2>الحسابات المسجلة</h2><button class="secondary" id="refresh">تحديث</button></div><input class="search" id="search" type="search" placeholder="بحث بالاسم أو البريد أو رقم العملية"><p class="muted" id="listStatus"></p><div class="tablewrap"><table><thead><tr><th>الرقم</th><th>النوع</th><th>الزبون</th><th>البريد</th><th>السعر</th><th>الربح</th><th>الإجراءات</th></tr></thead><tbody id="rows"></tbody></table></div></section></div>
 </main>
 <dialog id="detailsDialog" aria-labelledby="detailTitle">
@@ -53,20 +46,16 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
  <div class="detail-field"><small>البريد الإلكتروني</small><strong id="detailEmail" dir="ltr"></strong></div>
  </div><div class="detail-field" style="margin-top:12px"><small>ملاحظات</small><strong id="detailNotes"></strong></div>
  <div class="detail-price"><small>سعر البيع</small><strong id="detailPrice"></strong></div>
- <div class="detail-actions"><button id="detailPrint" type="button">طباعة وصل البيع</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
+ <div class="detail-actions"><button id="detailIssue" type="button" class="secondary">إنشاء QR ورمز PIN</button><button id="detailPrint" type="button">عرض الوصل / طباعة / حفظ صورة</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
  </div>
 </dialog>
-<section id="receipt" aria-label="وصل بيع">
- <div class="receipt-head"><div><div class="receipt-logo">CMD</div><div class="receipt-sub">ACCOUNT MANAGEMENT · APPLE & GOOGLE</div></div><div>وصل بيع / SALES RECEIPT</div></div>
- <h2 class="receipt-title">تفاصيل عملية البيع</h2>
- <div class="receipt-row"><span>رقم العملية</span><strong id="receiptId"></strong></div>
- <div class="receipt-row"><span>تاريخ التسجيل</span><strong id="receiptDate"></strong></div>
- <div class="receipt-row"><span>اسم الزبون</span><strong id="receiptCustomer"></strong></div>
- <div class="receipt-row"><span>نوع الحساب</span><strong id="receiptType"></strong></div>
- <div class="receipt-row"><span>بريد الحساب</span><strong id="receiptEmail" dir="ltr"></strong></div>
- <div class="receipt-total"><span>المبلغ الإجمالي</span><strong id="receiptPrice"></strong></div>
- <div class="receipt-foot">CMD • وصل معلوماتي لعملية البيع. لا يتضمن كلمات مرور أو بيانات دخول أو معلومات مالية داخلية.</div>
-</section>
+<dialog id="receiptDialog" aria-labelledby="receiptPreviewTitle">
+ <div class="receipt-preview-head"><h2 id="receiptPreviewTitle">وصل CMD الخاص بالزبون</h2><button type="button" class="secondary" id="receiptClose" aria-label="إغلاق">×</button></div>
+ <p class="muted" style="margin:0 0 14px">تگدر تطبعه أو تحفظه كصورة PNG عالية الدقة وترسلها للزبون.</p>
+ <img id="receiptPreview" alt="معاينة وصل بيع CMD" style="width:100%;height:auto;display:block;border-radius:12px;border:1px solid #e2e8f0">
+ <div class="receipt-preview-actions"><button type="button" id="receiptDownload">حفظ الوصل كصورة</button><button type="button" class="secondary" id="receiptPrintNow">طباعة الوصل</button></div>
+</dialog>
+<section id="receipt" aria-label="وصل بيع"><img id="receiptPrintImage" alt="وصل بيع CMD"></section>
 <dialog id="editDialog"><h2>تعديل عملية البيع</h2><form id="editForm"><input type="hidden" id="editId"><label>نوع الحساب</label><select id="editType"><option value="apple">Apple</option><option value="google">Google</option></select><label>اسم الزبون</label><input id="editCustomer" maxlength="120" required><label>البريد</label><input id="editEmail" type="email" maxlength="254" required><label>سعر البيع</label><input id="editPrice" type="number" min="0" max="1000000000" required><label>التكلفة</label><input id="editCost" type="number" min="0" max="1000000000" required><label>ملاحظات</label><textarea id="editNotes" maxlength="1000"></textarea><p id="editStatus" role="status"></p><button id="editSave">حفظ التعديلات</button><button type="button" class="secondary" id="editCancel">إلغاء</button></form></dialog><script>
 const el=id=>document.getElementById(id);let currentUser=null;let allAccounts=[];
 async function api(path,options={}){const r=await fetch(path,{credentials:"same-origin",cache:"no-store",...options});let d;try{d=await r.json()}catch{throw Error("استجابة غير صالحة من الخادم")};if(!r.ok)throw Error(d.error||"فشل الطلب");return d}
@@ -114,11 +103,39 @@ function openDetails(x){
 }
 el("detailClose").onclick=()=>el("detailsDialog").close();
 el("detailEdit").onclick=()=>{if(!selectedAccount)return;el("detailsDialog").close();openEdit(selectedAccount)};
-el("detailPrint").onclick=()=>{
+el("detailIssue").onclick=async()=>{
  const x=selectedAccount;if(!x)return;
- for(const [id,value] of Object.entries({receiptId:"#"+x.id,receiptDate:accountDate(x),receiptCustomer:x.customer_name,receiptType:accountType(x),receiptEmail:x.account_email,receiptPrice:fmt(x.sale_price_iqd)}))el(id).textContent=value;
- window.print();
+ if(sessionStorage.getItem("cmd_delivery_"+x.id)){alert("رابط QR موجود لهذه العملية في الجلسة الحالية. استخدم زر الطباعة.");return}
+ if(!confirm("إنشاء رابط تسليم محمي للعملية رقم "+x.id+"؟ سيظهر PIN مرة واحدة فقط، ويجب تسليمه منفصلاً عن الوصل."))return;
+ el("detailIssue").disabled=true;
+ try{
+  const d=await api("/api/delivery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({account_id:x.id})});
+  sessionStorage.setItem("cmd_delivery_"+x.id,location.origin+d.delivery_path);
+  alert("تم إنشاء رابط التسليم. رمز PIN: "+d.pin+"\nاحفظه الآن وسلّمه للزبون منفصلاً عن الوصل. لن يظهر مرة أخرى.");
+ }catch(e){alert(e.message)}finally{el("detailIssue").disabled=false}
 };
+let receiptCanvas=null;
+el("receiptClose").onclick=()=>el("receiptDialog").close();
+el("detailPrint").onclick=async()=>{
+ const x=selectedAccount;if(!x)return;
+ const link=sessionStorage.getItem("cmd_delivery_"+x.id);
+ if(!link){alert("يجب إصدار رابط التسليم المحمي أولاً. إذا فقدت الرابط القديم، لا تنشئ وصلاً برابط غير صحيح.");return}
+ el("detailPrint").disabled=true;
+ try{
+  await document.fonts.ready;
+  receiptCanvas=await CMDReceipt.buildReceipt({name:x.customer_name,email:x.account_email,price:fmt(x.sale_price_iqd),url:link});
+  const image=receiptCanvas.toDataURL("image/png");
+  el("receiptPreview").src=image;
+  el("receiptPrintImage").src=image;
+  el("receiptDialog").showModal();
+ }catch(e){alert(e.message||"تعذر تجهيز الوصل")}finally{el("detailPrint").disabled=false}
+};
+el("receiptDownload").onclick=async()=>{
+ if(!receiptCanvas)return;
+ el("receiptDownload").disabled=true;
+ try{await CMDReceipt.savePng(receiptCanvas,"CMD-Receipt.png")}catch(e){alert(e.message||"تعذر حفظ الصورة")}finally{el("receiptDownload").disabled=false}
+};
+el("receiptPrintNow").onclick=()=>{if(receiptCanvas)window.print()};
 function openEdit(x){
  el("editId").value=x.id;el("editType").value=x.account_type;el("editCustomer").value=x.customer_name;el("editEmail").value=x.account_email;el("editPrice").value=x.sale_price_iqd;el("editCost").value=x.cost_iqd;el("editNotes").value=x.notes||"";el("editStatus").textContent="";el("editDialog").showModal();
 }
@@ -134,6 +151,6 @@ el("editForm").addEventListener("submit",async e=>{
  catch(e){el("editStatus").textContent=e.message}finally{el("editSave").disabled=false}
 });
 el("loginForm").addEventListener("submit",async e=>{e.preventDefault();el("loginBtn").disabled=true;el("message").textContent="جاري التحقق...";try{await api("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:el("username").value,password:el("password").value})});el("password").value="";el("message").textContent="";await check()}catch(e){el("message").textContent=e.message}finally{el("loginBtn").disabled=false}});
-el("accountForm").addEventListener("submit",async e=>{e.preventDefault();el("save").disabled=true;el("status").textContent="جاري الحفظ...";try{const d=await api("/api/accounts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({account_type:el("type").value,customer_name:el("customer").value,account_email:el("email").value,sale_price_iqd:Number(el("price").value),cost_iqd:Number(el("cost").value),notes:el("notes").value})});el("status").textContent="تم حفظ العملية رقم "+d.id;el("accountForm").reset();await load()}catch(e){el("status").textContent=e.message}finally{el("save").disabled=false}});
+el("accountForm").addEventListener("submit",async e=>{e.preventDefault();el("save").disabled=true;el("status").textContent="جاري الحفظ...";try{const d=await api("/api/accounts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({delivery:{account_full_name:el("accountName").value,phone:el("phone").value,birth_date:el("birthday").value,address:el("address").value,initial_password:el("initialPassword").value},account_type:el("type").value,customer_name:el("customer").value,account_email:el("email").value,sale_price_iqd:Number(el("price").value),cost_iqd:Number(el("cost").value),notes:el("notes").value})});if(d.delivery_path){sessionStorage.setItem("cmd_delivery_"+d.id,location.origin+d.delivery_path);alert("تم حفظ العملية رقم "+d.id+"\nرمز PIN للزبون: "+d.pin+"\nللوصل افتح التفاصيل ثم الطباعة.")}el("status").textContent="تم حفظ العملية رقم "+d.id;el("accountForm").reset();await load()}catch(e){el("status").textContent=e.message}finally{el("save").disabled=false}});
 el("refresh").onclick=load;el("logout").onclick=async()=>{try{await api("/api/logout",{method:"POST"})}catch{}show(null)};check();
 </script></body></html>
