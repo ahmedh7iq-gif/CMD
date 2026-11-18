@@ -1,6 +1,6 @@
 # CMD secure delivery — deployment checklist
 
-This branch is a **draft**. Do not merge to production before completing the checklist and testing.
+This branch is a **draft**. Do not merge to production before completing the checklist and testing. Start with [STAGING_RUNBOOK.md](STAGING_RUNBOOK.md) on a separate Pages project and disposable D1 database. GitHub CI passing is not a substitute for Cloudflare staging integration.
 
 1. Back up the production D1 database.
 2. Execute `migrations/002_secure_delivery.sql` then `migrations/003_delivery_credentials.sql` then `migrations/004_encrypted_profile.sql` then `migrations/005_permanent_qr.sql` against the same production D1 binding named `DB`. Neither migration modifies existing sold-account records.
@@ -9,7 +9,7 @@ This branch is a **draft**. Do not merge to production before completing the che
 5. Ensure Cloudflare Access / WAF rate limiting protects the unauthenticated verification endpoint against high-volume abuse; app-level per-account throttling alone does not prevent denial-of-service or resource exhaustion.
 6. Confirm that passwords are updated first at Apple/Google; CMD only stores an encrypted copy and does not call Apple/Google password APIs.
 7. Receipt QR is generated locally in the owner sales-detail modal using the vendored MIT-licensed QRCode.js. Only the opaque delivery URL is encoded. PIN is displayed once at issuance and must be delivered separately. Receipt shows only buyer name, account email, QR, and sale price. The same branded 1080×1480 canvas is used for preview, PNG export/share (including iOS Share Sheet), and print. The link is kept in browser sessionStorage; after the tab closes, the owner can retrieve the exact same original QR in delivery-admin.html after password confirmation. Retrieval never changes the QR or PIN. The token is stored encrypted in D1; its hash is used for public verification.
-8. Harden the production deployment with restrictive CSP, privacy review of DOB/address, customer PIN re-verification for sensitive updates, and integration tests. DOB/address/account profile are AES-GCM encrypted in encrypted_profile; do not write legacy plaintext columns. Never place secrets in logs.
+8. Harden the production deployment with restrictive CSP, privacy review of DOB/address, independent customer verification before enabling sensitive updates (currently owner-only), and integration tests. DOB/address/account profile are AES-GCM encrypted in encrypted_profile; do not write legacy plaintext columns. Never place secrets in logs.
 9. The QR URL token is only returned once at issuance. If lost, use the owner-authorized QR retrieval form to reprint the same receipt. Password updates and PIN resets do not rotate the QR.
 
 Known limitations: owner credential view and password update are audited, but PIN attempts are not yet individually audited; owner credential view is gated by re-entering the owner's password. The 10-minute customer ticket is memory-only and invalidated by PIN reset. This is not production-ready until testing and review.
