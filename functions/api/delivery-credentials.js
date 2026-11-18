@@ -13,7 +13,7 @@ export async function onRequestPost({request,env}){
   if(!u||!await verifyPassword(b.owner_password,u.password_hash))return json({error:"إعادة التحقق فشلت"},403);
   id=b.account_id;actor="owner";
  }else{
-  id=await validateTicket(b?.ticket,env);
+  id=await validateTicket(b?.ticket,env,mode==="update"?"update":"read");
  }
  if(!Number.isSafeInteger(id)||id<1)return json({error:"انتهت جلسة التحقق، أعد إدخال PIN"},403);
  if(mode==="update"&&(typeof b.password!=="string"||b.password.length<1||b.password.length>256))return json({error:"كلمة المرور غير صالحة"},400);
