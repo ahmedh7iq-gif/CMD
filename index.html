@@ -37,7 +37,7 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
  .receipt-total{background:#f1f5f9;padding:18px;margin-top:25px;display:flex;justify-content:space-between;font-size:22px;font-weight:bold}
  .receipt-foot{margin-top:55px;border-top:1px solid #e2e8f0;padding-top:15px;color:#64748b;font-size:12px}
 }
-</style></head><body>
+</style><script src="/vendor/qrcode.min.js"></script></head><body>
 <header><h1>نظام إدارة الحسابات</h1><p>CMD • Apple & Google</p></header><main>
 <section class="card" id="login"><h2>تسجيل الدخول</h2><form id="loginForm"><label>اسم المستخدم</label><input id="username" autocomplete="username" required><label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn">دخول آمن</button></form><p id="message" role="status"></p></section>
 <div id="app"><section class="card"><div class="toolbar"><div><h2>لوحة المدير</h2><p class="muted">مرحباً، <strong id="name"></strong></p></div><button id="logout" class="secondary">خروج</button></div><div class="stats"><div class="stat">الحسابات المسجلة<strong id="count">—</strong></div><div class="stat">إجمالي المبيعات<strong id="sales">—</strong></div><div class="stat">الربح الإجمالي<strong id="profit">—</strong></div></div></section>
@@ -53,7 +53,7 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
  <div class="detail-field"><small>البريد الإلكتروني</small><strong id="detailEmail" dir="ltr"></strong></div>
  </div><div class="detail-field" style="margin-top:12px"><small>ملاحظات</small><strong id="detailNotes"></strong></div>
  <div class="detail-price"><small>سعر البيع</small><strong id="detailPrice"></strong></div>
- <div class="detail-actions"><button id="detailPrint" type="button">طباعة وصل البيع</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
+ <div class="detail-actions"><button id="detailIssue" type="button" class="secondary">إنشاء QR ورمز PIN</button><button id="detailPrint" type="button">طباعة وصل البيع</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
  </div>
 </dialog>
 <section id="receipt" aria-label="وصل بيع">
@@ -64,8 +64,8 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
  <div class="receipt-row"><span>اسم الزبون</span><strong id="receiptCustomer"></strong></div>
  <div class="receipt-row"><span>نوع الحساب</span><strong id="receiptType"></strong></div>
  <div class="receipt-row"><span>بريد الحساب</span><strong id="receiptEmail" dir="ltr"></strong></div>
- <div class="receipt-total"><span>المبلغ الإجمالي</span><strong id="receiptPrice"></strong></div>
- <div class="receipt-foot">CMD • وصل معلوماتي لعملية البيع. لا يتضمن كلمات مرور أو بيانات دخول أو معلومات مالية داخلية.</div>
+ <div id="receiptQR" style="display:flex;justify-content:center;margin:25px auto"></div><div class="receipt-total"><span>المبلغ الإجمالي</span><strong id="receiptPrice"></strong></div>
+ <div class="receipt-foot">CMD • وصل معلوماتي لعملية البيع. امسح رمز QR لفتح صفحة التسليم المحمي، واستلم PIN من إدارة CMD بشكل منفصل.</div>
 </section>
 <dialog id="editDialog"><h2>تعديل عملية البيع</h2><form id="editForm"><input type="hidden" id="editId"><label>نوع الحساب</label><select id="editType"><option value="apple">Apple</option><option value="google">Google</option></select><label>اسم الزبون</label><input id="editCustomer" maxlength="120" required><label>البريد</label><input id="editEmail" type="email" maxlength="254" required><label>سعر البيع</label><input id="editPrice" type="number" min="0" max="1000000000" required><label>التكلفة</label><input id="editCost" type="number" min="0" max="1000000000" required><label>ملاحظات</label><textarea id="editNotes" maxlength="1000"></textarea><p id="editStatus" role="status"></p><button id="editSave">حفظ التعديلات</button><button type="button" class="secondary" id="editCancel">إلغاء</button></form></dialog><script>
 const el=id=>document.getElementById(id);let currentUser=null;let allAccounts=[];
@@ -114,10 +114,25 @@ function openDetails(x){
 }
 el("detailClose").onclick=()=>el("detailsDialog").close();
 el("detailEdit").onclick=()=>{if(!selectedAccount)return;el("detailsDialog").close();openEdit(selectedAccount)};
+el("detailIssue").onclick=async()=>{
+ const x=selectedAccount;if(!x)return;
+ if(sessionStorage.getItem("cmd_delivery_"+x.id)){alert("رابط QR موجود لهذه العملية في الجلسة الحالية. استخدم زر الطباعة.");return}
+ if(!confirm("إنشاء رابط تسليم محمي للعملية رقم "+x.id+"؟ سيظهر PIN مرة واحدة فقط، ويجب تسليمه منفصلاً عن الوصل."))return;
+ el("detailIssue").disabled=true;
+ try{
+  const d=await api("/api/delivery",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({account_id:x.id})});
+  sessionStorage.setItem("cmd_delivery_"+x.id,location.origin+d.delivery_path);
+  alert("تم إنشاء رابط التسليم. رمز PIN: "+d.pin+"\nاحفظه الآن وسلّمه للزبون منفصلاً عن الوصل. لن يظهر مرة أخرى.");
+ }catch(e){alert(e.message)}finally{el("detailIssue").disabled=false}
+};
 el("detailPrint").onclick=()=>{
  const x=selectedAccount;if(!x)return;
- for(const [id,value] of Object.entries({receiptId:"#"+x.id,receiptDate:accountDate(x),receiptCustomer:x.customer_name,receiptType:accountType(x),receiptEmail:x.account_email,receiptPrice:fmt(x.sale_price_iqd)}))el(id).textContent=value;
- window.print();
+ const link=sessionStorage.getItem("cmd_delivery_"+x.id);
+ if(!link){alert("حتى يتضمن الوصل QR، أنشئ رابط التسليم أولاً من زر إنشاء QR ورمز PIN. إذا أُنشئ سابقاً وفُقد الرابط، لا تُنشئ وصلاً برابط تخميني.");return}
+ for(const [id,value] of Object.entries({receiptCustomer:x.customer_name,receiptEmail:x.account_email,receiptPrice:fmt(x.sale_price_iqd)}))el(id).textContent=value;
+ const target=el("receiptQR");target.replaceChildren();
+ new QRCode(target,{text:link,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
+ setTimeout(()=>window.print(),350);
 };
 function openEdit(x){
  el("editId").value=x.id;el("editType").value=x.account_type;el("editCustomer").value=x.customer_name;el("editEmail").value=x.account_email;el("editPrice").value=x.sale_price_iqd;el("editCost").value=x.cost_iqd;el("editNotes").value=x.notes||"";el("editStatus").textContent="";el("editDialog").showModal();
