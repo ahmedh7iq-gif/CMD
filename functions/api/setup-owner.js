@@ -9,7 +9,9 @@ const reply = (data, status = 200) =>
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB || !env.OWNER_SETUP_SECRET) {
-    return reply({ error: "Configuration missing" }, 503);
+    const staging = new URL(request.url).hostname === "cmd-staging.pages.dev";
+    const missing = [!env.DB && "DB", !env.OWNER_SETUP_SECRET && "OWNER_SETUP_SECRET"].filter(Boolean);
+    return reply({ error: "Configuration missing", ...(staging ? { stage: missing.join(", ") } : {}) }, 503);
   }
 
   const secret = request.headers.get("X-Setup-Secret");
