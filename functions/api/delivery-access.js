@@ -1,5 +1,6 @@
 import {json,sameOrigin} from "../_auth.js";
 import {sha256,pinHash,accessTicket} from "../_delivery.js";
+import {nextPinFailure} from "../_lockout.js";
 const fail={error:"الرابط أو الرمز غير صحيح"};
 export async function onRequestPost({request,env}){
  if(!sameOrigin(request))return json({error:"طلب غير مسموح"},403);
@@ -20,14 +21,11 @@ export async function onRequestPost({request,env}){
    return json({success:true,customer_name:row.customer_name,account_email:row.account_email,credentials_available:true,ticket:await accessTicket(row.account_id,env,b.purpose==="update"?"update":"read")});
   }
   // Atomic compare-and-swap protects against simultaneous incorrect requests.
-  const nextAttempts=row.failed_attempts+1;
-  let level=row.lock_level,until=null,permanent=0,attempts=nextAttempts;
-  if(level===0&&nextAttempts>=5){level=1;until=now+3600;attempts=0}
-  else if(level>0){if(level>=4){level=5;permanent=1;attempts=0}else{level++;until=now+3600*Math.pow(2,level-1);attempts=0}}
+  const {attempts,level,until,permanent,remaining}=nextPinFailure(row.failed_attempts,row.lock_level,now);
   const updated=await env.DB.prepare("UPDATE account_deliveries SET failed_attempts=?,lock_level=?,locked_until=?,permanently_locked=?,updated_at=CURRENT_TIMESTAMP WHERE account_id=? AND failed_attempts=? AND lock_level=? AND permanently_locked=0 AND (locked_until IS NULL OR locked_until<=?)").bind(attempts,level,until,permanent,row.account_id,row.failed_attempts,row.lock_level,now).run();
   if(!updated.meta.changes)return json({error:"أعد المحاولة لاحقاً"},429);
   if(permanent)return json({error:"تم إيقاف الوصول نهائياً. تواصل مع مالك CMD.",permanent:true},423);
   if(until)return json({error:"تم قفل الحساب مؤقتاً",retry_after_seconds:until-now},423);
-  return json({error:"رمز غير صحيح",remaining_attempts:5-nextAttempts},403);
+  return json({error:"رمز غير صحيح",remaining_attempts:remaining},403);
  }catch(e){console.error("Delivery verification failed",e);return json({error:"تعذر التحقق حالياً"},503)}
 }
