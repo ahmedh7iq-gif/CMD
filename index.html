@@ -21,23 +21,16 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
 .detail-price small{color:#64748b}.detail-price strong{display:block;font-size:26px;margin-top:5px}
 .detail-actions{display:flex;gap:10px;margin-top:20px}.detail-actions button{margin:0}
 .view-btn{background:#edf3ff;color:#244b96}
-#receipt{display:none}
+#receipt{display:none}\n#receiptDialog{width:min(95vw,590px);max-height:92vh;overflow:auto;padding:22px;border-radius:20px}\n.receipt-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px}\n.receipt-preview-head h2{font-size:21px;margin:0 0 12px}\n.receipt-preview-head button{width:auto;margin:0}\n.receipt-preview-actions{display:flex;gap:10px}.receipt-preview-actions button{margin-top:15px}\n@media(max-width:560px){.receipt-preview-actions{flex-direction:column}}
 @media(max-width:560px){.detail-grid{grid-template-columns:1fr}.detail-body{padding:19px}.detail-actions{flex-direction:column}}
 @media print{
- @page{size:A4;margin:18mm}
- body{background:#fff!important;color:#17243b}
+ @page{size:A4;margin:8mm}
+ body{background:#fff!important}
  body>header,main,dialog{display:none!important}
- #receipt{display:block!important;direction:rtl;font-family:Arial,sans-serif;color:#17243b}
- .receipt-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #17243b;padding-bottom:22px}
- .receipt-logo{font-size:32px;font-weight:900;letter-spacing:3px}
- .receipt-sub{color:#64748b;font-size:12px;margin-top:6px}
- .receipt-title{font-size:25px;margin:35px 0 25px}
- .receipt-row{display:flex;justify-content:space-between;gap:25px;padding:15px 0;border-bottom:1px solid #e2e8f0}
- .receipt-row span{color:#64748b}.receipt-row strong{overflow-wrap:anywhere;text-align:left}
- .receipt-total{background:#f1f5f9;padding:18px;margin-top:25px;display:flex;justify-content:space-between;font-size:22px;font-weight:bold}
- .receipt-foot{margin-top:55px;border-top:1px solid #e2e8f0;padding-top:15px;color:#64748b;font-size:12px}
+ #receipt{display:flex!important;justify-content:center;align-items:flex-start;width:100%;margin:0;padding:0}
+ #receiptPrintImage{display:block;max-width:100%;max-height:280mm;object-fit:contain}
 }
-</style><script src="/vendor/qrcode.min.js"></script></head><body>
+</style><script src="/vendor/qrcode.min.js"></script><script src="/vendor/cmd-receipt.js"></script></head><body>
 <header><h1>نظام إدارة الحسابات</h1><p>CMD • Apple & Google</p></header><main>
 <section class="card" id="login"><h2>تسجيل الدخول</h2><form id="loginForm"><label>اسم المستخدم</label><input id="username" autocomplete="username" required><label>كلمة المرور</label><input id="password" type="password" autocomplete="current-password" required><button id="loginBtn">دخول آمن</button></form><p id="message" role="status"></p></section>
 <div id="app"><section class="card"><div class="toolbar"><div><h2>لوحة المدير</h2><p class="muted">مرحباً، <strong id="name"></strong></p></div><button id="logout" class="secondary">خروج</button></div><div class="stats"><div class="stat">الحسابات المسجلة<strong id="count">—</strong></div><div class="stat">إجمالي المبيعات<strong id="sales">—</strong></div><div class="stat">الربح الإجمالي<strong id="profit">—</strong></div></div></section>
@@ -53,20 +46,16 @@ button{transition:transform .15s ease,box-shadow .15s ease}button:hover{box-shad
  <div class="detail-field"><small>البريد الإلكتروني</small><strong id="detailEmail" dir="ltr"></strong></div>
  </div><div class="detail-field" style="margin-top:12px"><small>ملاحظات</small><strong id="detailNotes"></strong></div>
  <div class="detail-price"><small>سعر البيع</small><strong id="detailPrice"></strong></div>
- <div class="detail-actions"><button id="detailIssue" type="button" class="secondary">إنشاء QR ورمز PIN</button><button id="detailPrint" type="button">طباعة وصل البيع</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
+ <div class="detail-actions"><button id="detailIssue" type="button" class="secondary">إنشاء QR ورمز PIN</button><button id="detailPrint" type="button">عرض الوصل / طباعة / حفظ صورة</button><button id="detailEdit" type="button" class="secondary">تعديل العملية</button></div>
  </div>
 </dialog>
-<section id="receipt" aria-label="وصل بيع">
- <div class="receipt-head"><div><div class="receipt-logo">CMD</div><div class="receipt-sub">ACCOUNT MANAGEMENT · APPLE & GOOGLE</div></div><div>وصل بيع / SALES RECEIPT</div></div>
- <h2 class="receipt-title">تفاصيل عملية البيع</h2>
- <div class="receipt-row"><span>رقم العملية</span><strong id="receiptId"></strong></div>
- <div class="receipt-row"><span>تاريخ التسجيل</span><strong id="receiptDate"></strong></div>
- <div class="receipt-row"><span>اسم الزبون</span><strong id="receiptCustomer"></strong></div>
- <div class="receipt-row"><span>نوع الحساب</span><strong id="receiptType"></strong></div>
- <div class="receipt-row"><span>بريد الحساب</span><strong id="receiptEmail" dir="ltr"></strong></div>
- <div id="receiptQR" style="display:flex;justify-content:center;margin:25px auto"></div><div class="receipt-total"><span>المبلغ الإجمالي</span><strong id="receiptPrice"></strong></div>
- <div class="receipt-foot">CMD • وصل معلوماتي لعملية البيع. امسح رمز QR لفتح صفحة التسليم المحمي، واستلم PIN من إدارة CMD بشكل منفصل.</div>
-</section>
+<dialog id="receiptDialog" aria-labelledby="receiptPreviewTitle">
+ <div class="receipt-preview-head"><h2 id="receiptPreviewTitle">وصل CMD الخاص بالزبون</h2><button type="button" class="secondary" id="receiptClose" aria-label="إغلاق">×</button></div>
+ <p class="muted" style="margin:0 0 14px">تگدر تطبعه أو تحفظه كصورة PNG عالية الدقة وترسلها للزبون.</p>
+ <img id="receiptPreview" alt="معاينة وصل بيع CMD" style="width:100%;height:auto;display:block;border-radius:12px;border:1px solid #e2e8f0">
+ <div class="receipt-preview-actions"><button type="button" id="receiptDownload">حفظ الوصل كصورة</button><button type="button" class="secondary" id="receiptPrintNow">طباعة الوصل</button></div>
+</dialog>
+<section id="receipt" aria-label="وصل بيع"><img id="receiptPrintImage" alt="وصل بيع CMD"></section>
 <dialog id="editDialog"><h2>تعديل عملية البيع</h2><form id="editForm"><input type="hidden" id="editId"><label>نوع الحساب</label><select id="editType"><option value="apple">Apple</option><option value="google">Google</option></select><label>اسم الزبون</label><input id="editCustomer" maxlength="120" required><label>البريد</label><input id="editEmail" type="email" maxlength="254" required><label>سعر البيع</label><input id="editPrice" type="number" min="0" max="1000000000" required><label>التكلفة</label><input id="editCost" type="number" min="0" max="1000000000" required><label>ملاحظات</label><textarea id="editNotes" maxlength="1000"></textarea><p id="editStatus" role="status"></p><button id="editSave">حفظ التعديلات</button><button type="button" class="secondary" id="editCancel">إلغاء</button></form></dialog><script>
 const el=id=>document.getElementById(id);let currentUser=null;let allAccounts=[];
 async function api(path,options={}){const r=await fetch(path,{credentials:"same-origin",cache:"no-store",...options});let d;try{d=await r.json()}catch{throw Error("استجابة غير صالحة من الخادم")};if(!r.ok)throw Error(d.error||"فشل الطلب");return d}
@@ -125,15 +114,28 @@ el("detailIssue").onclick=async()=>{
   alert("تم إنشاء رابط التسليم. رمز PIN: "+d.pin+"\nاحفظه الآن وسلّمه للزبون منفصلاً عن الوصل. لن يظهر مرة أخرى.");
  }catch(e){alert(e.message)}finally{el("detailIssue").disabled=false}
 };
-el("detailPrint").onclick=()=>{
+let receiptCanvas=null;
+el("receiptClose").onclick=()=>el("receiptDialog").close();
+el("detailPrint").onclick=async()=>{
  const x=selectedAccount;if(!x)return;
  const link=sessionStorage.getItem("cmd_delivery_"+x.id);
- if(!link){alert("حتى يتضمن الوصل QR، أنشئ رابط التسليم أولاً من زر إنشاء QR ورمز PIN. إذا أُنشئ سابقاً وفُقد الرابط، لا تُنشئ وصلاً برابط تخميني.");return}
- for(const [id,value] of Object.entries({receiptCustomer:x.customer_name,receiptEmail:x.account_email,receiptPrice:fmt(x.sale_price_iqd)}))el(id).textContent=value;
- const target=el("receiptQR");target.replaceChildren();
- new QRCode(target,{text:link,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
- setTimeout(()=>window.print(),350);
+ if(!link){alert("يجب إصدار رابط التسليم المحمي أولاً. إذا فقدت الرابط القديم، لا تنشئ وصلاً برابط غير صحيح.");return}
+ el("detailPrint").disabled=true;
+ try{
+  await document.fonts.ready;
+  receiptCanvas=await CMDReceipt.buildReceipt({name:x.customer_name,email:x.account_email,price:fmt(x.sale_price_iqd),url:link});
+  const image=receiptCanvas.toDataURL("image/png");
+  el("receiptPreview").src=image;
+  el("receiptPrintImage").src=image;
+  el("receiptDialog").showModal();
+ }catch(e){alert(e.message||"تعذر تجهيز الوصل")}finally{el("detailPrint").disabled=false}
 };
+el("receiptDownload").onclick=async()=>{
+ if(!receiptCanvas)return;
+ el("receiptDownload").disabled=true;
+ try{await CMDReceipt.savePng(receiptCanvas,"CMD-Receipt.png")}catch(e){alert(e.message||"تعذر حفظ الصورة")}finally{el("receiptDownload").disabled=false}
+};
+el("receiptPrintNow").onclick=()=>{if(receiptCanvas)window.print()};
 function openEdit(x){
  el("editId").value=x.id;el("editType").value=x.account_type;el("editCustomer").value=x.customer_name;el("editEmail").value=x.account_email;el("editPrice").value=x.sale_price_iqd;el("editCost").value=x.cost_iqd;el("editNotes").value=x.notes||"";el("editStatus").textContent="";el("editDialog").showModal();
 }
