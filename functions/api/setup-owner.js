@@ -12,14 +12,6 @@ export async function onRequestPost({ request, env }) {
     return reply({ error: "Configuration missing" }, 503);
   }
 
-  const existing = await env.DB.prepare(
-    "SELECT id FROM users WHERE role = 'owner' LIMIT 1"
-  ).first();
-
-  if (existing) {
-    return reply({ error: "Setup unavailable" }, 403);
-  }
-
   const secret = request.headers.get("X-Setup-Secret");
 
   if (!secret || secret !== env.OWNER_SETUP_SECRET) {
@@ -41,6 +33,14 @@ export async function onRequestPost({ request, env }) {
     return reply({ error: "Invalid password length" }, 400);
   }
 
+  let stage = "check-owner";
+  try {
+  const existing = await env.DB.prepare(
+    "SELECT id FROM users WHERE role = 'owner' LIMIT 1"
+  ).first();
+  if (existing) return reply({ error: "Setup unavailable" }, 403);
+
+  stage = "hash-password";
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const encoder = new TextEncoder();
 
@@ -72,6 +72,7 @@ export async function onRequestPost({ request, env }) {
   const passwordHash =
     `pbkdf2_sha256$${iterations}$${hex(salt)}$${hex(bits)}`;
 
+  stage = "insert-owner";
   const result = await env.DB.prepare(
     `INSERT INTO users
      (full_name, username, password_hash, role)
@@ -89,4 +90,8 @@ export async function onRequestPost({ request, env }) {
   }
 
   return reply({ success: true }, 201);
+  } catch (error) {
+    console.error("Owner setup failed at stage:", stage, error);
+    return reply({ error: "Owner setup failed", stage }, 500);
+  }
 }
