@@ -26,7 +26,8 @@ test("AES-GCM roundtrip, random IV and account binding",async()=>{
 });
 test("wrong or missing encryption key fails closed",async()=>{
  await assert.rejects(()=>d.encryptSecret("secret",{CMD_CREDENTIAL_KEY:"bad"},42));
- await assert.rejects(()=>d.decryptSecret(await d.encryptSecret("secret",env,42),{CMD_CREDENTIAL_KEY:""},42));
+ const ciphertext=await d.encryptSecret("secret",env,42);
+ await assert.rejects(()=>d.decryptSecret(ciphertext,{CMD_CREDENTIAL_KEY:""},42));
 });
 test("ticket is scoped, expires, detects tampering and PIN reset",async()=>{
  const ticket=await d.accessTicket(42,env,"read");
