@@ -21,7 +21,19 @@ export async function onRequestPost({request,env}){
 
   const {account_full_name,birth_date,address}=b;
   if(typeof account_full_name!=="string"||account_full_name.length>150||typeof birth_date!=="string"||birth_date.length>20||typeof address!=="string"||address.length>500||birth_date&&!/^\d{4}-\d{2}-\d{2}$/.test(birth_date))return json({error:"تحقق من الحقول"},400);
-  const encrypted=await encryptSecret(JSON.stringify({account_full_name:account_full_name.trim(),birth_date,address:address.trim()}),env,id);
+  const phone=b.phone??profile.phone??"";
+  if(typeof phone!=="string"||phone.length>40)return json({error:"تحقق من رقم الهاتف"},400);
+  const encrypted=await encryptSecret(JSON.stringify({account_full_name:account_full_name.trim(),birth_date,address:address.trim(),phone:phone.trim()}),env,id);
+  if(actor==="customer"){
+   const {customer_name,account_email}=b;
+   if(typeof customer_name!=="string"||!customer_name.trim()||customer_name.length>120||typeof account_email!=="string"||account_email.length>254||!/^\S+@\S+\.\S+$/.test(account_email))return json({error:"تحقق من الاسم والبريد"},400);
+   await env.DB.batch([
+    env.DB.prepare("UPDATE sold_accounts SET customer_name=?,account_email=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(customer_name.trim(),account_email.trim(),id),
+    env.DB.prepare("UPDATE account_deliveries SET encrypted_profile=?,updated_at=CURRENT_TIMESTAMP WHERE account_id=?").bind(encrypted,id),
+    env.DB.prepare("INSERT INTO delivery_audit(account_id,action,actor) VALUES(?,?,?)").bind(id,"profile_update",actor)
+   ]);
+   return json({success:true});
+  }
   await env.DB.prepare("UPDATE account_deliveries SET encrypted_profile=?,account_full_name=NULL,birth_date=NULL,address=NULL,updated_at=CURRENT_TIMESTAMP WHERE account_id=?").bind(encrypted,id).run();
   await env.DB.prepare("INSERT INTO delivery_audit(account_id,action,actor) VALUES(?,?,?)").bind(id,"profile_update","owner").run();
   return json({success:true});
