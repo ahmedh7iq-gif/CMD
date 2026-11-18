@@ -37,6 +37,9 @@ test("ticket is scoped, expires, detects tampering and PIN reset",async()=>{
  assert.equal(await d.validateTicket(ticket,env),null);row.pin_hash=old;
  const update=await d.accessTicket(42,env,"update");
  assert.equal(await d.validateTicket(update,env,"update"),42);
+ const realNow=Date.now;
+ try{Date.now=()=>realNow()+601000;assert.equal(await d.validateTicket(update,env,"update"),null)}
+ finally{Date.now=realNow}
 });
 test("customer token hash is fixed length",async()=>{
  assert.match(d.randomHex(),/^[0-9a-f]{64}$/);
