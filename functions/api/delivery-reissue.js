@@ -18,6 +18,6 @@ export async function onRequestPost({request,env}){
     .bind(digest,pinDigest,b.account_id).run();
   if(!updated.meta.changes)return json({error:"التسليم غير موجود"},404);
   await env.DB.prepare("INSERT INTO delivery_audit(account_id,action,actor) VALUES(?,?,?)").bind(b.account_id,"qr_reissued","owner").run();
-  return json({success:true,delivery_path:"/delivery.html?t="+token,pin,notice:"تم إبطال QR القديم وPIN القديم. اطبع الوصل الجديد وسلّم PIN بشكل منفصل."});
+  return json({success:true,account_id:b.account_id,delivery_path:"/delivery.html?t="+token,pin,notice:"تم إبطال QR القديم وPIN القديم. اطبع الوصل الجديد وسلّم PIN بشكل منفصل."});
  }catch(e){console.error("Delivery rotation failed",e);return json({error:"تعذر إعادة إصدار الوصل"},503)}
 }
