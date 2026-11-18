@@ -17,7 +17,7 @@ export async function onRequestPost({request,env}){
    const updated=await env.DB.prepare("UPDATE account_deliveries SET failed_attempts=0,lock_level=0,locked_until=NULL,updated_at=CURRENT_TIMESTAMP WHERE account_id=? AND failed_attempts=? AND lock_level=? AND permanently_locked=0 AND (locked_until IS NULL OR locked_until<=?)").bind(row.account_id,row.failed_attempts,row.lock_level,now).run();
    if(!updated.meta.changes)return json({error:"أعد المحاولة لاحقاً"},429);
    // Only non-secret customer data until encrypted credential delivery is implemented.
-   return json({success:true,customer_name:row.customer_name,account_email:row.account_email,credentials_available:true,ticket:await accessTicket(row.account_id,env)});
+   return json({success:true,customer_name:row.customer_name,account_email:row.account_email,credentials_available:true,ticket:await accessTicket(row.account_id,env,b.purpose==="update"?"update":"read")});
   }
   // Atomic compare-and-swap protects against simultaneous incorrect requests.
   const nextAttempts=row.failed_attempts+1;
