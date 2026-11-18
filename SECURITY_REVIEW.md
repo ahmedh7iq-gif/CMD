@@ -3,7 +3,7 @@
 Review date: 2026-11-18. This is a source-code review, **not** a completed penetration test or production certification.
 
 ## Changes made\n- Added owner-only credential-update policy and regression test; customer edit UI hidden pending independent verification.\n- Added Cloudflare Pages _headers to prevent caching/referrer leakage and framing on delivery pages.
-- Added tests/delivery-security.test.mjs covering 6-digit PIN format, keyed PIN hashes, AES-GCM roundtrip/random IV/account binding/tamper detection, invalid encryption keys, read/update ticket scopes, ticket tampering, PIN-reset invalidation, and token digest format.
+- Verified passing CI: https://github.com/ahmedh7iq-gif/CMD/actions/runs/44280781306 (commit 8fee859).\n- Added tests/delivery-security.test.mjs covering 6-digit PIN format, keyed PIN hashes, AES-GCM roundtrip/random IV/account binding/tamper detection, invalid encryption keys, read/update ticket scopes, ticket tampering, PIN-reset invalidation, and token digest format.
 - Expanded GitHub Actions workflow to run both security and lockout regression tests with Node 22.
 - Delivery page removes the QR token from the visible address bar and browser history entry after reading it.
 - Signed ticket validation now rejects invalid account IDs.
@@ -11,7 +11,7 @@ Review date: 2026-11-18. This is a source-code review, **not** a completed penet
 - QR remains stable after password and PIN changes. Owner retrieval requires session and password re-verification.
 
 ## Findings and release blockers
-1. **No verified CI run yet.** GitHub workflow runs/statuses returned no results for the latest commit when checked. Do not claim automated tests have passed.
+1. **CI verification PASSED for commit 8fee859.** GitHub Actions run 44280781306 completed successfully on 2026-11-18, including Node security/lockout tests and disposable SQLite migrations. This does not verify Cloudflare runtime integration.
 2. **No staging Cloudflare/D1 integration test.** Before deployment, run migrations 002–005 on a fresh disposable test database, configure CMD_CREDENTIAL_KEY and OWNER_SETUP_SECRET as secrets, and exercise issue, reprint, PIN lockout, unlock, password update, and receipt scan.
 3. **Customer password update is temporarily disabled (fail-closed).** Re-entering the same PIN is not independent MFA. Until an independent approval factor exists, only the owner (session plus password re-verification) can update the stored password. Customer can still view credentials after QR plus PIN.
 4. **Persistent QR is a bearer locator.** Never log/share token-bearing URLs beyond intended recipients. An owner-only emergency revocation mechanism would necessarily invalidate the old QR; do not rotate it on routine password changes.
