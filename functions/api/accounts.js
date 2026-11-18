@@ -18,3 +18,35 @@ export async function onRequestPost({request,env}){
  return json({success:true,id:r.meta.last_row_id},201);
  }catch(e){console.error("Account insert failed",e);return json({error:"تعذر الحفظ. تأكد من إنشاء جدول الحسابات."},503)}
 }
+
+async function readEditable(request){
+ let b;try{b=await request.json()}catch{return {error:"بيانات غير صحيحة"}}
+ const {account_type,customer_name,account_email}=b||{};
+ const notes=b?.notes??"",price=b?.sale_price_iqd,cost=b?.cost_iqd;
+ if(!["apple","google"].includes(account_type)||typeof customer_name!=="string"||!customer_name.trim()||customer_name.length>120||typeof account_email!=="string"||account_email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account_email)||typeof notes!=="string"||notes.length>1000||![price,cost].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=1000000000))return {error:"تحقق من البيانات والأسعار"};
+ return {data:{account_type,customer_name:customer_name.trim(),account_email:account_email.trim(),notes:notes.trim(),sale_price_iqd:price,cost_iqd:cost}};
+}
+export async function onRequestPut({request,env}){
+ if(!sameOrigin(request))return json({error:"طلب غير مسموح"},403);
+ if(!await owner(request,env))return json({error:"غير مصرح"},403);
+ const id=Number(new URL(request.url).searchParams.get("id"));
+ if(!Number.isSafeInteger(id)||id<1)return json({error:"رقم الحساب غير صحيح"},400);
+ const parsed=await readEditable(request);if(parsed.error)return json({error:parsed.error},400);
+ const x=parsed.data;
+ try{
+ const r=await env.DB.prepare("UPDATE sold_accounts SET account_type=?,customer_name=?,account_email=?,notes=?,sale_price_iqd=?,cost_iqd=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(x.account_type,x.customer_name,x.account_email,x.notes,x.sale_price_iqd,x.cost_iqd,id).run();
+ if(!r.meta.changes)return json({error:"الحساب غير موجود"},404);
+ return json({success:true,id});
+ }catch(e){console.error("Account update failed",e);return json({error:"تعذر تعديل الحساب"},503)}
+}
+export async function onRequestDelete({request,env}){
+ if(!sameOrigin(request))return json({error:"طلب غير مسموح"},403);
+ if(!await owner(request,env))return json({error:"غير مصرح"},403);
+ const id=Number(new URL(request.url).searchParams.get("id"));
+ if(!Number.isSafeInteger(id)||id<1)return json({error:"رقم الحساب غير صحيح"},400);
+ try{
+ const r=await env.DB.prepare("DELETE FROM sold_accounts WHERE id=?").bind(id).run();
+ if(!r.meta.changes)return json({error:"الحساب غير موجود"},404);
+ return json({success:true,id});
+ }catch(e){console.error("Account delete failed",e);return json({error:"تعذر حذف الحساب"},503)}
+}
